@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && npx tsc --noEmit 2>&1 | head -60)",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && npx tsc --noEmit 2>&1 | head -40)",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && npx expo start --non-interactive 2>&1 | head -30)",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && timeout 12 npx expo start --non-interactive 2>&1 || true)",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && npx expo-doctor 2>&1 | head -30)",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && node -e \"\nconst { execSync } = require\\('child_process'\\);\n// Check that all imports resolve\ntry {\n  execSync\\('npx tsc --noEmit', { stdio: 'pipe' }\\);\n  console.log\\('TypeScript: PASS'\\);\n} catch\\(e\\) {\n  console.log\\('TypeScript errors:', e.stdout?.toString\\(\\)\\);\n}\n\")",
+      "Bash(cd \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now\" && npx tsc --noEmit 2>&1)",
+      "Bash(find \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now/node_modules/@expo/metro-config\" -name \"*.js\" -maxdepth 3 2>/dev/null | head -5\ngrep -r \"babel-preset-expo\\\\|babelTransformer\\\\|internal/babel\" \\\\\n  \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now/node_modules/expo\" \\\\\n  --include=\"*.js\" -l 2>/dev/null | grep -v \"node_modules/expo/node_modules\" | head -1)",
+      "Bash(grep -r \"babel-preset-expo\\\\|internal/babel\" \\\\\n  \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now/node_modules/expo\" \\\\\n  --include=\"*.js\" -l 2>/dev/null | grep -v \"node_modules/expo/node_modules\" | head -10)",
+      "Bash(find \"/Users/stephenmorse/Library/Mobile Documents/com~apple~CloudDocs/here-and-now/node_modules/@expo/metro-config\" -name \"*.js\" 2>/dev/null | head -5 | xargs grep -l \"babel\\\\|transform\" 2>/dev/null | head -3)"
+    ]
+  }
+}
