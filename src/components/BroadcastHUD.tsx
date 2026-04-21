@@ -71,31 +71,16 @@ export function BroadcastHUD({
     return () => pulse.stop();
   }, [pulseInterval]);
 
-  if (isOrbital) {
-    return (
-      <View style={styles.container} pointerEvents="box-none">
-        <View style={{ width: HUD_WIDTH, marginHorizontal: HUD_H_PAD }}>
-          <Pressable onLongPress={onWordmarkLongPress} delayLongPress={3000}>
-            <Text style={styles.wordmarkOrbital}>HERE & NOW</Text>
-          </Pressable>
-        </View>
-        <View style={styles.spacer} />
-        <View style={styles.hpad}>
-          <DataStrip weather={weather} altitudeMode={scene.altitudeMode} updatedAt={updatedAt} />
-        </View>
-      </View>
-    );
-  }
-
-  // ── Live broadcast ──────────────────────────────────────────────────────────
+  // ── All modes share the same HUD layout ────────────────────────────────────
   //
-  // Top block structure (paddingHorizontal: 20 constrains wordmark and LIVE
-  // row to identical horizontal bounds — space-between pushes LIVE flush right):
+  // Orbital differs only in: slower LIVE pulse (handled by pulseInterval above)
+  // and 0.85 container opacity so stars feel primary without removing any elements.
   //
+  // Top block structure:
   //   HERE & NOW
   //   ROCHESTER, NY          LIVE ●
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View style={[styles.container, isOrbital && { opacity: 0.85 }]} pointerEvents="box-none">
       <View style={{ width: HUD_WIDTH, marginHorizontal: HUD_H_PAD }}>
         <Pressable onLongPress={onWordmarkLongPress} delayLongPress={3000}>
           <Text style={styles.wordmark}>HERE & NOW</Text>
@@ -137,14 +122,6 @@ const styles = StyleSheet.create({
     ...typography.displayXL,
     color: colors.white,
     letterSpacing: 2,
-  },
-  wordmarkOrbital: {
-    fontFamily: 'BCBarellTEST-Regular',
-    fontSize: 20,
-    lineHeight: 24,
-    color: colors.white,
-    letterSpacing: 2,
-    opacity: 0.45,
   },
   metaRow: {
     flexDirection: 'row',

@@ -1,9 +1,6 @@
 # HERE & NOW — Design Review Checklist
 Version 1.1 — April 2026
 
-Use this file to judge builds.
-Use decisions.md to understand what was already tried and why certain approaches were rejected.
-
 This document is used to review builds of HERE & NOW during design and development.
 
 Its purpose is not to define architecture. Its purpose is to help the team judge whether

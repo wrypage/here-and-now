@@ -19,16 +19,16 @@ BroadcastHUD is what makes it feel like a channel, not a screensaver.
 ## Font stack
 
 Custom fonts (loaded via expo-font from assets/fonts/):
-- BCBarellTEST-Regular.otf     — primary display, HERE & NOW wordmark, channel identity
-- BCBarellTEST-1973.otf        — alternate display variant
+- BCBarellTEST-Regular.otf       — primary display, HERE & NOW wordmark, channel identity
+- BCBarellTEST-1973.otf          — alternate display variant
 - BCBarellTEST-CondensedThin.otf — narrow display variant
 - BCBarellTEST-ExtendedBlack.otf — heavy display variant
-- BCBarellTEST-Inline.otf      — decorative display variant
-- address-sans-pro.otf         — temperature, city label, location labels only
+- BCBarellTEST-Inline.otf        — decorative display variant
+- address-sans-pro.otf           — temperature, city label, location labels only
 
 Google Fonts (installed via @expo-google-fonts/dm-sans and @expo-google-fonts/dm-mono):
-- DM Sans Light (weight 300)   — condition line, short narrative copy
-- DM Mono                      — data strip, timestamps, live indicators, technical readouts
+- DM Sans Light (weight 300)     — condition line, short narrative copy
+- DM Mono                        — data strip, timestamps, live indicators, technical readouts
 
 Typography roles — use exactly as specified:
 - BC Barell        = channel identity and primary display only
@@ -56,13 +56,41 @@ No AI presenters, no voice, no premium tier, no push alerts yet.
 One gesture only: swipe up to reveal detail, swipe down to hide.
 
 ## Project documents
-All four files live in the project root. Read all of them before starting any build task.
+All six files live in the project root. Read all of them before starting any build task.
 
-- CLAUDE.md (this file) — project identity, font stack, core rules
-- tech-spec-v0.3.md     — full architecture, types, worked examples, milestones
-- storyboards.md        — visual and emotional target for each time-of-day slot
-- design-review.md      — checklist for evaluating builds (for human review, not build tasks)
+- CLAUDE.md (this file)       — project identity, font stack, core rules
+- state-of-the-project.md    — read this first. plain-English overview of what the
+                                product is, where it stands, and what comes next
+- tech-spec-v0.3.md           — full architecture, types, worked examples, milestones
+- storyboards.md              — visual and emotional targets for each time-of-day slot
+- decisions.md                — what was tried, rejected, and why. read before changing
+                                radar, satellite, map, HUD, or palette systems
+- design-review.md            — checklist for evaluating builds (human review only)
 
 The tech spec is the primary build reference.
 The storyboards define what correct visual output feels like.
 When in doubt about how something should look, consult storyboards.md.
+
+## End of session protocol
+At the end of every session, before stopping, automatically do all of the following
+without being asked. This is not optional. It is part of every session.
+
+1. Update state-of-the-project.md
+   - Mark anything that was fixed this session
+   - Note anything newly broken or discovered
+   - Update the unresolved issues list to reflect current reality
+   - Update the "Where the project is right now" section
+
+2. Update decisions.md
+   - Add any new decisions made this session under the correct section
+   - Add any approaches that were tried and rejected
+   - Add any bugs that were diagnosed, with root cause and fix status
+   - Update status of any previously open issues that were resolved
+
+3. Commit and push
+   git add .
+   git commit -m "session: [one-line summary of what changed]"
+   git push
+
+Do this every session. The docs are the project memory.
+If the docs are not updated, the next session starts blind.

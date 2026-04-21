@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Image, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Defs, G, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { SceneState } from '../types/scene';
-import { PRECIP, LIGHTNING, SKY, SATELLITE } from '../utils/constants';
+import { PRECIP, LIGHTNING, SKY, SATELLITE, ORBITAL } from '../utils/constants';
+import { STAR_CATALOG } from '../utils/starCatalog';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -170,10 +172,47 @@ const SatelliteLayer = React.memo(function SatelliteLayer({
   );
 });
 
+// ─── Star field coordinate math ──────────────────────────────────────────────
+
+function raDecToAltAz(
+  raDeg: number,
+  decDeg: number,
+  latDeg: number,
+  lonDeg: number,
+  date: Date,
+): { alt: number; az: number } {
+  const jd = date.getTime() / 86400000 + 2440587.5;
+  const gmst = (280.46061837 + 360.98564736629 * (jd - 2451545.0)) % 360;
+  const lst = ((gmst + lonDeg) % 360 + 360) % 360;
+  const ha = ((lst - raDeg) % 360 + 360) % 360;
+  const [haR, decR, latR] = [ha, decDeg, latDeg].map((v) => (v * Math.PI) / 180);
+  const sinAlt =
+    Math.sin(decR) * Math.sin(latR) + Math.cos(decR) * Math.cos(latR) * Math.cos(haR);
+  const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt))) * (180 / Math.PI);
+  const cosAz =
+    (Math.sin(decR) - Math.sin(latR) * sinAlt) /
+    (Math.cos(latR) * Math.cos((alt * Math.PI) / 180));
+  let az = Math.acos(Math.max(-1, Math.min(1, cosAz))) * (180 / Math.PI);
+  if (Math.sin(haR) > 0) az = 360 - az;
+  return { alt, az };
+}
+
+function buildCatalogStars(latDeg: number, lonDeg: number, date: Date): StarPoint[] {
+  return STAR_CATALOG
+    .filter((s) => s.name !== '')
+    .map((s) => {
+      const { alt, az } = raDecToAltAz(s.ra, s.dec, latDeg, lonDeg, date);
+      if (alt < 0) return null;
+      const pos = projectStar(az, alt);
+      return buildStar(pos.x, pos.y, s.mag, s.name);
+    })
+    .filter((s): s is StarPoint => s !== null);
+}
+
 // ─── Star field (orbital mode) ────────────────────────────────────────────────
 //
-// Fetches real star positions from Astrospheric API.
-// Falls back to 200 deterministic dots if the API is unavailable.
+// Stars: computed on-device from bundled Hipparcos catalog (no network needed).
+// Planets + Moon: fetched from visibleplanets.dev/v3.
 // 10-minute module-level cache avoids repeat fetches across re-mounts.
 
 type StarPoint = {
@@ -190,6 +229,48 @@ const PLANET_NAMES = new Set([
 ]);
 const MAX_STARS = 200;
 const STAR_CACHE_TTL_MS = 10 * 60 * 1000;
+
+// Spectral color lookup for named stars
+const STAR_COLOR_MAP: Record<string, string> = {
+  Betelgeuse: '#ffaa44', Aldebaran: '#ffaa44', Antares: '#ffaa44',
+  Rigel: '#cce0ff', Vega: '#cce0ff', Sirius: '#cce0ff', Deneb: '#cce0ff',
+  Capella: '#ffddaa', Arcturus: '#ffddaa', Pollux: '#ffddaa',
+};
+
+function getStarColor(name: string, mag: number): string {
+  if (name === 'Moon')           return '#fffde8';
+  if (PLANET_NAMES.has(name))    return '#e8a020';
+  if (STAR_COLOR_MAP[name])      return STAR_COLOR_MAP[name];
+  if (mag < 1.5)                 return '#fff8f0';
+  if (mag < 3)                   return '#ffffff';
+  return 'rgba(255,255,255,0.85)';
+}
+
+// Moon phase — Julian date method, no API needed
+// Reference new moon: 2451550.1 (Jan 6 2000 18:14 UTC)
+const SYNODIC_PERIOD = 29.53058867;
+const NEW_MOON_JD    = 2451550.1;
+
+function computeMoonPhase(date: Date): number {
+  const jd = date.getTime() / 86400000 + 2440587.5;
+  return (((jd - NEW_MOON_JD) % SYNODIC_PERIOD) + SYNODIC_PERIOD) % SYNODIC_PERIOD / SYNODIC_PERIOD;
+}
+
+// SVG path for the shadow region on a moon disc of radius R
+// phase 0=new, 0.5=full; shadow covers the unlit side
+function moonShadowPath(phase: number, R: number): string {
+  const tx    = R * Math.cos(2 * Math.PI * phase);
+  const absT  = Math.max(0.5, Math.abs(tx));
+  if (phase < 0.5) {
+    // Waxing — right side lit, shadow on left
+    const sw = tx > 0 ? 1 : 0;
+    return `M 0 ${-R} A ${R} ${R} 0 0 0 0 ${R} A ${absT} ${R} 0 0 ${sw} 0 ${-R} Z`;
+  } else {
+    // Waning — left side lit, shadow on right
+    const sw = tx < 0 ? 0 : 1;
+    return `M 0 ${-R} A ${R} ${R} 0 0 1 0 ${R} A ${absT} ${R} 0 0 ${sw} 0 ${-R} Z`;
+  }
+}
 
 // Module-level cache so re-mounts (mode switching) don't re-fetch
 const starCache: { ts: number; data: StarPoint[] } = { ts: 0, data: [] };
@@ -210,16 +291,16 @@ function buildStar(
   name: string,
 ): StarPoint {
   const r =
-    mag < 1 ? 3.5 :
-    mag < 2 ? 2.5 :
-    mag < 3 ? 1.8 :
-    mag < 4 ? 1.2 : 0.8;
-  const color =
-    name === 'Moon'          ? '#fffff0' :
-    PLANET_NAMES.has(name)   ? '#e8a020' :
-    mag < 1.5                ? '#fff8e8' : '#ffffff';
-  const baseOpacity = 0.6 + (5 - Math.min(mag, 5)) * 0.08;
-  return { x, y, r, color, baseOpacity, isMoon: name === 'Moon' };
+    mag < 1 ? 5.0 :
+    mag < 2 ? 3.5 :
+    mag < 3 ? 2.5 :
+    mag < 4 ? 1.8 : 1.2;
+  const baseOpacity =
+    mag < 1 ? 1.00 :
+    mag < 2 ? 0.85 :
+    mag < 3 ? 0.75 :
+    mag < 4 ? 0.65 : 0.60;
+  return { x, y, r, color: getStarColor(name, mag), baseOpacity, isMoon: name === 'Moon' };
 }
 
 // Deterministic fallback: 200 stars scattered via golden-angle distribution
@@ -237,10 +318,42 @@ type StarFieldLayerProps = {
   longitude: number;
 };
 
+// Per-star twinkle durations — seeded deterministically so they survive re-renders
+// Bright stars (mag < 2): 4000–7000ms slow; faint (mag >= 3): 2000–3500ms fast
+function twinkleDuration(mag: number, seed: number): number {
+  const rng = ((seed * 1664525 + 1013904223) & 0x7fffffff) / 0x7fffffff;
+  if (mag < 2)  return 4000 + rng * 3000;
+  if (mag < 3)  return 3000 + rng * 2000;
+  return 2000 + rng * 1500;
+}
+
+// Starting phase offset so stars don't all pulse in sync
+function twinklePhaseOffset(seed: number): number {
+  return ((seed * 22695477 + 1) & 0x7fffffff) / 0x7fffffff;
+}
+
+const MOON_R     = 28;  // moon body radius px
+const MOON_GLOW  = 48;  // glow halo radius px
+
 function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
   const [stars, setStars] = useState<StarPoint[]>(() =>
     starCache.data.length > 0 ? starCache.data : FALLBACK_STARS,
   );
+
+  // Moon phase — computed once, stable for the 10-min cache lifetime
+  const moonPhase = useMemo(() => {
+    const p = computeMoonPhase(new Date());
+    const label =
+      p < 0.03 || p > 0.97 ? 'new moon'      :
+      p < 0.22             ? 'waxing crescent':
+      p < 0.28             ? 'first quarter'  :
+      p < 0.47             ? 'waxing gibbous' :
+      p < 0.53             ? 'full moon'      :
+      p < 0.72             ? 'waning gibbous' :
+      p < 0.78             ? 'last quarter'   : 'waning crescent';
+    console.log(`[starfield] moon phase: ${p.toFixed(2)} (${label})`);
+    return p;
+  }, []);
 
   // Pre-allocate MAX_STARS animated values — stable across re-renders
   const twinkleAnims = useRef(
@@ -249,47 +362,71 @@ function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
     ),
   ).current;
 
-  // Fetch from Astrospheric; fall back silently on any error
+  // Build from catalog immediately, then overlay real planets from visibleplanets.dev
   useEffect(() => {
     const now = Date.now();
     if (starCache.data.length > 0 && now - starCache.ts < STAR_CACHE_TTL_MS) return;
 
-    const url =
-      `https://www.astrospheric.com/api/GetSky_V1` +
-      `?Latitude=${latitude}&Longitude=${longitude}&Time=${now}`;
+    const catalogStars = buildCatalogStars(latitude, longitude, new Date());
+    console.log('[starfield] catalog stars above horizon:', catalogStars.length);
 
+    const preliminary = catalogStars.length > 5 ? catalogStars : FALLBACK_STARS;
+    setStars(preliminary.slice(0, MAX_STARS));
+
+    const url = `https://api.visibleplanets.dev/v3?latitude=${latitude}&longitude=${longitude}`;
+    console.log('[starfield] fetching planets:', url);
     fetch(url)
-      .then((r) => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then((raw: unknown) => {
-        if (!Array.isArray(raw)) throw new Error('unexpected format');
-        const mapped: StarPoint[] = (raw as Record<string, unknown>[])
-          .filter((s) => (s.Altitude as number) > 0 && (s.Magnitude as number) < 5)
-          .map((s) => {
-            const pos = projectStar(s.Azimuth as number, s.Altitude as number);
-            return buildStar(pos.x, pos.y, s.Magnitude as number, (s.Name as string) ?? '');
-          })
-          .slice(0, MAX_STARS);
-        const result = mapped.length > 10 ? mapped : FALLBACK_STARS;
-        starCache.ts = Date.now();
-        starCache.data = result;
-        setStars(result);
+      .then((r) => {
+        console.log('[starfield] planets HTTP status:', r.status);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json() as Promise<{ data: Array<{ name: string; altitude: number; azimuth: number; magnitude: number; aboveHorizon: boolean }> }>;
       })
-      .catch(() => {
-        // Cache the fallback to prevent thrashing a known-down API
+      .then(({ data }) => {
+        const planetStars: StarPoint[] = data
+          .filter((p) => p.aboveHorizon && p.magnitude < 5)
+          .map((p) => {
+            const pos = projectStar(p.azimuth, p.altitude);
+            return buildStar(pos.x, pos.y, p.magnitude, p.name);
+          });
+        console.log('[starfield] planets/Moon above horizon:', planetStars.length);
+        const combined = [...planetStars, ...catalogStars].slice(0, MAX_STARS);
         starCache.ts = Date.now();
-        starCache.data = FALLBACK_STARS;
+        starCache.data = combined;
+        setStars(combined);
+      })
+      .catch((err) => {
+        console.warn('[starfield] planet fetch failed:', String(err), '— using catalog only');
+        starCache.ts = Date.now();
+        starCache.data = preliminary;
       });
   }, [latitude, longitude]);
 
-  // Twinkle: restart animations whenever star data changes
+  // Per-star independent twinkle — random duration, random phase offset
   useEffect(() => {
     const anims = stars.slice(0, MAX_STARS).map((star, i) => {
-      twinkleAnims[i].setValue(star.baseOpacity);
-      const dur = 3000 + (i % 11) * 270; // 3000–5970 ms per star, staggered
+      if (star.isMoon) {
+        twinkleAnims[i].setValue(1);
+        return null;
+      }
+      const dur    = twinkleDuration(star.r, i * 31 + 7);   // r as proxy for mag
+      const offset = twinklePhaseOffset(i * 17 + 3);
+      // Start at a random point in the cycle via initial value
+      const startOpacity = star.baseOpacity * (0.6 + offset * 0.4);
+      twinkleAnims[i].setValue(startOpacity);
       return Animated.loop(
         Animated.sequence([
           Animated.timing(twinkleAnims[i], {
-            toValue: star.baseOpacity * 0.7,
+            toValue: star.baseOpacity * 0.6,
+            duration: dur * (1 - offset),
+            useNativeDriver: true,
+          }),
+          Animated.timing(twinkleAnims[i], {
+            toValue: star.baseOpacity,
+            duration: dur * offset,
+            useNativeDriver: true,
+          }),
+          Animated.timing(twinkleAnims[i], {
+            toValue: star.baseOpacity * 0.6,
             duration: dur,
             useNativeDriver: true,
           }),
@@ -301,9 +438,11 @@ function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
         ]),
       );
     });
-    anims.forEach((a) => a.start());
-    return () => anims.forEach((a) => a.stop());
+    anims.forEach((a) => a?.start());
+    return () => anims.forEach((a) => a?.stop());
   }, [stars]);
+
+  const shadowD = moonShadowPath(moonPhase, MOON_R);
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
@@ -312,12 +451,17 @@ function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
           return (
             <View
               key={`s${i}`}
-              style={{ position: 'absolute', left: star.x - 14, top: star.y - 14 }}
+              style={{ position: 'absolute', left: star.x - MOON_GLOW, top: star.y - MOON_GLOW }}
             >
-              {/* Soft glow halo */}
-              <View style={moonStyles.glow} />
-              {/* Moon body */}
-              <Animated.View style={[moonStyles.body, { opacity: twinkleAnims[i] }]} />
+              <Svg width={MOON_GLOW * 2} height={MOON_GLOW * 2}>
+                <Path
+                  d={`M ${MOON_GLOW} ${MOON_GLOW} m 0 ${-MOON_R} a ${MOON_R} ${MOON_R} 0 1 0 0 ${MOON_R * 2} a ${MOON_R} ${MOON_R} 0 1 0 0 ${-MOON_R * 2} Z`}
+                  fill="#fffde8"
+                />
+                <G transform={`translate(${MOON_GLOW}, ${MOON_GLOW})`}>
+                  <Path d={shadowD} fill="#00040f" opacity={0.92} />
+                </G>
+              </Svg>
             </View>
           );
         }
@@ -327,8 +471,8 @@ function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
             style={{
               position: 'absolute',
               left: star.x - star.r,
-              top: star.y - star.r,
-              width: star.r * 2,
+              top:  star.y - star.r,
+              width:  star.r * 2,
               height: star.r * 2,
               borderRadius: star.r,
               backgroundColor: star.color,
@@ -341,23 +485,60 @@ function StarFieldLayer({ latitude, longitude }: StarFieldLayerProps) {
   );
 }
 
-const moonStyles = StyleSheet.create({
-  glow: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,240,0.12)',
-  },
-  body: {
-    position: 'absolute',
-    left: 4,
-    top: 4,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fffff0',
-  },
-});
+
+// ─── Earth limb arc (orbital mode) ───────────────────────────────────────────
+//
+// Three-layer construct: filled Earth body below the arc, atmospheric glow
+// LinearGradient fading upward from the limb, and a thin arc stroke on top.
+// Renders order: glow → Earth body → arc line (so Earth body covers glow overflow).
+
+function EarthLimbLayer() {
+  const arcY = SCREEN_H * ORBITAL.limbArcFraction;
+  const dip  = ORBITAL.limbArcDipPx;
+  const oh   = ORBITAL.limbArcOverhangPx;
+
+  const arcD  = `M ${-oh} ${arcY + dip} Q ${SCREEN_W / 2} ${arcY} ${SCREEN_W + oh} ${arcY + dip}`;
+  const bodyD = `${arcD} L ${SCREEN_W + oh} ${SCREEN_H + 20} L ${-oh} ${SCREEN_H + 20} Z`;
+
+  return (
+    <Svg style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      <Path d={bodyD} fill={ORBITAL.limbFillColor} />
+      <Path
+        d={arcD}
+        stroke={ORBITAL.limbLineColor}
+        strokeWidth={ORBITAL.limbLineWidth}
+        strokeOpacity={ORBITAL.limbLineOpacity}
+        fill="none"
+        strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+// ─── Deep space radial depth (orbital mode) ───────────────────────────────────
+//
+// A very subtle radial gradient from screen centre giving a sense of depth —
+// the cosmos is slightly brighter in the middle, fading to near-black at edges.
+
+function SpaceDepthLayer() {
+  return (
+    <Svg style={StyleSheet.absoluteFillObject} pointerEvents="none">
+      <Defs>
+        <RadialGradient
+          id="spaceDepth"
+          cx="50%"
+          cy="50%"
+          r="55%"
+          gradientUnits="objectBoundingBox"
+        >
+          <Stop offset="0"   stopColor="rgb(10,20,60)" stopOpacity="0.4" />
+          <Stop offset="1"   stopColor="rgb(0,4,15)"   stopOpacity="0"   />
+        </RadialGradient>
+      </Defs>
+      <Rect x="0" y="0" width={SCREEN_W} height={SCREEN_H} fill="url(#spaceDepth)" />
+    </Svg>
+  );
+}
 
 // ─── Rain ──────────────────────────────────────────────────────────────────────
 
@@ -579,7 +760,7 @@ export function AtmosphereCanvas({
   const showSnow = (precipType === 'snow' || precipType === 'mixed') && precipIntensity > 0;
 
   return (
-    <View style={[StyleSheet.absoluteFillObject, { backgroundColor: isOrbital ? '#000008' : '#08090b' }]}>
+    <View style={[StyleSheet.absoluteFillObject, { backgroundColor: isOrbital ? '#00040f' : '#08090b' }]}>
 
       {/* Layer 1 — base imagery */}
       {!isOrbital && (
@@ -603,18 +784,19 @@ export function AtmosphereCanvas({
         </>
       )}
       {isOrbital && (
-        <StarFieldLayer latitude={latitude} longitude={longitude} />
+        <>
+          <SpaceDepthLayer />
+          <StarFieldLayer latitude={latitude} longitude={longitude} />
+          <EarthLimbLayer />
+        </>
       )}
 
-      {/* Layer 2 — fog / haze overlay */}
-      <FogOverlay fogOpacity={fogOpacity} hazeColor={scene.palette.haze} />
+      {/* Layers 2–4: weather effects — never shown in orbital (space has no weather) */}
+      {!isOrbital && <FogOverlay fogOpacity={fogOpacity} hazeColor={scene.palette.haze} />}
+      {!isOrbital && showRain && <RainLayer precipIntensity={precipIntensity} windEnergy={windEnergy} />}
+      {!isOrbital && showSnow && <SnowLayer precipIntensity={precipIntensity} />}
 
-      {/* Layer 3 — precipitation */}
-      {showRain && <RainLayer precipIntensity={precipIntensity} windEnergy={windEnergy} />}
-      {showSnow && <SnowLayer precipIntensity={precipIntensity} />}
-
-      {/* Layer 4 — lightning flash */}
-      <LightningLayer lightningChance={lightningChance} />
+      {!isOrbital && <LightningLayer lightningChance={lightningChance} />}
     </View>
   );
 }

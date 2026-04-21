@@ -3,11 +3,6 @@ Version: 0.3
 Scope: iPhone-first atmospheric prototype
 Goal: prove the product feel before AI anchors, voice, premium, or advanced imaging
 
-Implementation note:
-This spec describes the target architecture and current Phase 1 requirements.
-For major implementation deviations, rejected approaches, and evaluated alternatives,
-read decisions.md before changing radar, satellite, map, HUD, or palette systems.
-
 ...
 
 WHAT THIS APP IS
@@ -250,39 +245,6 @@ The broadcast fills the phone. Everything else is secondary.
 
 ...
 
-5a. Visual principles
-
-The main screen is not a basemap-led experience.
-
-HERE & NOW should look less like a map with weather on top, and more like a live
-atmospheric film frame with truth-data woven into it.
-
-The visual hierarchy is:
-- atmosphere first
-- geography second
-- data third
-- interface last
-
-Default rules:
-- roads are banned by default
-- political boundaries are banned by default
-- ordinary map labels are banned by default
-- radar supports the scene and must not dominate it
-- map technology may be used as hidden scaffolding, but must not become the visible
-  identity of the product
-
-Reference influences:
-- Nullschool for motion and field behavior
-- Restrained dark cartography for context without clutter
-- Satellite-scale thinking for orbital mode and rare high-drama weather moments
-
-Named visual directions:
-- atmosphericBroadcast — default visual DNA for Phase 1
-- technicalStormDesk — secondary, more data-forward mode for active weather
-- orbitalOvernight — midnight-to-5am planetary mode
-
-...
-
 6. Theme constants and visual tokens
 
 Brand colors:
@@ -327,23 +289,11 @@ or named configuration values:
 - radar opacity
 - tint or darkening strength
 - city light brightness
-- city light density
-- horizon definition strength
+- horizon height
 - HUD spacing
 - typography scale
 - LIVE bug pulse speed
 - transition duration between visual states
-- map context opacity
-- map label visibility threshold
-- boundary visibility threshold
-- wind motion strength
-- flow line visibility if used
-- visual mode preset
-
-Visual mode preset must support at minimum:
-- atmosphericBroadcast (default)
-- technicalStormDesk
-- orbitalOvernight
 
 The design system should make it easy to adjust the look of the app by changing named
 values rather than modifying rendering logic in multiple places.
@@ -917,12 +867,11 @@ type RadarOverlayProps = {
 }
 
 Implementation notes:
-- use map technology only as a projection surface for radar tiles
-- disable roads, labels, boundaries, and all visible map chrome
+- use react-native-maps
+- disable roads, labels, and all map chrome where possible
 - disable user interaction in Phase 1
 - use dark tint or alpha blend to fit brand palette
 - radar should support the scene, not dominate it
-- if radar begins to read as the visual base of the product, reduce opacity immediately
 - if no radar data is available, RadarOverlay renders nothing silently
 
 16.3 BroadcastHUD.tsx

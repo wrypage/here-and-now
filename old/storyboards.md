@@ -1,9 +1,6 @@
 # HERE & NOW — Storyboards
 Version 1.0 — April 2026
 
-For implementation constraints, see tech-spec-v0.3.md.
-For rejected visual approaches and reference-source decisions, see decisions.md.
-
 These storyboards define the visual and emotional target for the Phase 1 prototype. They sit alongside the design doc and tech spec.
 
 Their job is to answer one question:
@@ -21,36 +18,6 @@ Typography references in these storyboards follow the updated system:
 - Address Sans Pro = display / temperature / labels
 - DM Sans Light = narrative copy
 - DM Mono = technical readouts / timestamps / live indicators
-
-...
-
-## Visual principles
-
-The screen should not look like a conventional map with weather pasted on top.
-
-The visual hierarchy is:
-- atmosphere first
-- geography second
-- data third
-- interface last
-
-Geography should usually be implied rather than diagrammed. The user should feel the
-region without seeing a road grid, political boundaries, or ordinary basemap labels.
-
-Motion should do more of the work than cartography. Cloud drift, rain angle, haze, and
-storm behavior should communicate that the atmosphere is alive.
-
-Radar is proof that the weather is real, not the dominant aesthetic layer. It should
-support the scene rather than replace it.
-
-Reference influences:
-- Nullschool for motion, flow, and the feeling of living atmospheric systems
-- Restrained dark map styles for low-clutter context
-- Satellite-scale thinking for orbital mode and rare major-weather moments
-
-Default visual DNA: **Atmospheric Broadcast**
-Secondary mode: **Technical Storm Desk**
-Overnight crown-jewel mode: **Orbital Overnight**
 
 ...
 

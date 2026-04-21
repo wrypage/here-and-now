@@ -8,7 +8,7 @@ export const DEV_TUNING_MODE = false;
 // Force a specific altitude mode regardless of time of day.
 // Set to 'orbital' | 'sky' | 'ground-day' | 'ground-night' to lock the view.
 // null = automatic (real time of day).
-export const DEV_FORCE_ALTITUDE = null as
+export const DEV_FORCE_ALTITUDE = 'orbital' as
   | 'orbital'
   | 'sky'
   | 'ground-day'

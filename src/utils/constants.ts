@@ -114,6 +114,18 @@ export const TRANSITIONS = {
   altitudeModeChangeDuration: 2000,
 } as const;
 
+// ─── Orbital / Star field ─────────────────────────────────────────────────────
+
+export const ORBITAL = {
+  limbArcFraction: 0.88,    // arc midpoint Y as fraction of screen height (bottom 12%)
+  limbArcDipPx: 30,         // px — how much arc edges droop below center (shallow)
+  limbArcOverhangPx: 120,   // px — arc extends this far past each screen edge
+  limbLineWidth: 2,
+  limbLineOpacity: 0.6,
+  limbLineColor: '#1a3a6e',
+  limbFillColor: '#0a1628', // Earth body fill below arc
+} as const;
+
 // ─── Refresh ──────────────────────────────────────────────────────────────────
 
 export const REFRESH = {
