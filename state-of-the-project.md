@@ -1,5 +1,6 @@
 # HERE & NOW — State of the Project
 Version 1.0 — April 2026
+Last updated: 2026-04-20
 
 This document explains what HERE & NOW is, where the project stands now, and what comes next.
 Read this first before diving into the tech spec, storyboards, design review, or decisions log.
@@ -123,16 +124,19 @@ is the atmosphere, not an illustration of a skyline. Satellite imagery replaced 
 **GeoColor is the right satellite source.** True color daytime, city lights at night,
 updates every 10 minutes. The same product professional broadcast weather uses.
 GIBS `default/default` URL pattern confirmed working on device — no capabilities XML fetch needed.
+— 2026-04-20
 
 **The overnight needs real astronomical data.** The Astrospheric API is permanently dead
 (HTTP 404). Replaced with bundled Hipparcos catalog for stars (on-device, no network)
 plus visibleplanets.dev/v3 for planets and Moon (one fetch, 10-min cache).
 The specificity of real star positions for the user's location and time is what separates
 the overnight from a generic space screensaver — that specificity is now working.
+— 2026-04-20
 
 **Orbital mode is space — no weather layers.** FogOverlay, RainLayer, SnowLayer, and
 LightningLayer must all check `altitudeMode !== 'orbital'` before rendering. This was a
 bug in the initial build and is now fixed with `!isOrbital` guards in AtmosphereCanvas.
+— 2026-04-20
 
 ...
 

@@ -1,5 +1,6 @@
 # HERE & NOW — Decisions Log
 Version 1.1 — April 2026
+Last updated: 2026-04-20
 
 This file does not replace the tech spec or storyboards.
 - tech-spec-v0.3.md defines how the app should be built
@@ -51,13 +52,12 @@ Why: Grayscale only. Emotionally wrong for morning — no color, no blue sky.
 **GOES-East visible Channel 02 (IEM) — REJECTED**
 Why: Also grayscale. Same problem as infrared.
 
-**GOES-East GeoColor (NASA GIBS) — CURRENT TARGET, not yet confirmed working**
+**GOES-East GeoColor (NASA GIBS) — CONFIRMED WORKING — 2026-04-20**
 What it is: True color daytime, city lights + IR at night. Updates every 10 minutes.
-Problem: Tiles serving nighttime composite during morning. Root cause: GIBS capabilities
-XML returns HTTP 400 from mobile (CORS). Without timestamp, URL falls back to stale tiles.
-Fix to try: Use "default" twice in the URL — tells GIBS to serve most recent tile:
+Fix applied: Use "default" twice in the URL — GIBS serves most recent tile automatically,
+no capabilities XML fetch needed (which returned HTTP 400 from mobile/CORS):
 https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/GOES-East_ABI_GeoColor/default/default/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png
-Note: GIBS uses {z}/{y}/{x} order (Y before X).
+Note: GIBS uses {z}/{y}/{x} order (Y before X). Confirmed working on device.
 
 **RainViewer satellite — FALLBACK ONLY**
 Tile URL: https://tilecache.rainviewer.com/v2/satellite/{time}/256/{z}/{x}/{y}/0/0_0.png
@@ -106,7 +106,7 @@ Wind particle technique is open source. NOAA GFS data is free. Build in Phase 3.
 
 ---
 
-### Overnight star field — Astrospheric API dead, replaced
+### Overnight star field — Astrospheric API dead, replaced — 2026-04-20
 
 **Decision:** Astrospheric API permanently dead (HTTP 404 confirmed). Replaced with two sources.
 
@@ -133,7 +133,7 @@ waxing crescent on April 20 2026 (phase ≈ 0.14). Logged to console as
 
 ---
 
-### Milky Way band — tried and removed
+### Milky Way band — tried and removed — 2026-04-20
 
 **Decision:** Removed. Too distracting at any opacity that registers visually.
 
@@ -145,7 +145,7 @@ The orbital view is stronger without it. May revisit in Phase 3 with a more subt
 
 ---
 
-### Earth limb arc — atmospheric glow tried and removed
+### Earth limb arc — atmospheric glow tried and removed — 2026-04-20
 
 **Decision:** Clean thin stroke only. No gradient glow above the arc.
 
@@ -213,7 +213,7 @@ key and the fontFamily string in the wordmark Text style must use this exact str
 
 ---
 
-### Orbital HUD opacity
+### Orbital HUD opacity — 2026-04-20
 
 Currently set at 0.85 container-level opacity for orbital mode vs 1.0 for other modes.
 LIVE pulse uses slower overnight cadence (2000ms vs 1200ms). Full HUD elements present —
@@ -221,7 +221,7 @@ not stripped down. May need further tuning on device once the full channel feel 
 
 ---
 
-### Palette for clear evening
+### Palette for clear evening — 2026-04-20
 
 dusk+clear and ground-night+clear palettes show muddy amber-brown rather than blue sky.
 Rule: clear skies must always read as blue. Warmth only at the horizon. Not yet fixed.
