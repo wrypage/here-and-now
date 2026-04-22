@@ -12,6 +12,8 @@ Read this before making any changes to radar, satellite, map, HUD, palette, or
 visual layer systems. It exists so Claude Code does not repeat approaches that were
 already evaluated and abandoned.
 
+When logging a decision, note Cost impact: ↑ higher / ↓ lower / — neutral / unknown where relevant.
+
 ...
 
 ## 1. Rendering and data-source decisions
