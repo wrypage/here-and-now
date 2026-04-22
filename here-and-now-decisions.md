@@ -1,6 +1,6 @@
 # HERE & NOW — Decisions Log
 Version 1.1 — April 2026
-Last updated: 2026-04-20
+Last updated: 2026-04-22
 
 This file does not replace the tech spec or storyboards.
 - here-and-now-tech-spec-v0.3.md defines how the app should be built
