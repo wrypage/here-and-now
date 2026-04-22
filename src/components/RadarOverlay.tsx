@@ -12,7 +12,7 @@
 import React from 'react';
 import { Dimensions, Image, StyleSheet, View } from 'react-native';
 import { RadarOverlayState } from '../types/radar';
-import { RADAR } from '../utils/constants';
+import { RADAR, SATELLITE, ALLSKY } from '../utils/constants';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -46,6 +46,7 @@ export function RadarOverlay({
   longitude,
   radar,
 }: RadarOverlayProps): React.ReactElement | null {
+  if (!ALLSKY.showRadar && SATELLITE.source === 'allsky_live') return null;
   if (!radar.enabled || radar.frames.length === 0) return null;
 
   const frame = radar.frames[radar.activeFrameIndex];

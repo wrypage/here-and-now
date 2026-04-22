@@ -13,7 +13,7 @@ import { TuningPanel } from '../src/components/TuningPanel';
 import { colors } from '../src/theme/colors';
 import { typography } from '../src/theme/typography';
 import { spacing } from '../src/theme/spacing';
-import { TINT } from '../src/utils/constants';
+import { TINT, SATELLITE } from '../src/utils/constants';
 import { SceneState, AltitudeMode } from '../src/types/scene';
 import { WeatherPayload } from '../src/types/weather';
 import { getLightMode, getAltitudeMode } from '../src/utils/timeOfDay';
@@ -141,12 +141,17 @@ export function ChannelScreen(): React.ReactElement {
     return <View style={[styles.fill, { backgroundColor: colors.nearBlack }]} />;
   }
 
-  const tintOpacity =
-    effectiveScene.altitudeMode === 'orbital'          ? 0.15 :
-    effectiveScene.skyMode === 'storm'                 ? TINT.stormOpacity :
-    effectiveScene.lightMode === 'night' ||
-    effectiveScene.lightMode === 'deep-night'          ? TINT.nightOpacity :
-    TINT.defaultOpacity;
+  const isAllSkyLive = SATELLITE.source === 'allsky_live';
+
+  const tintOpacity = (() => {
+    const base =
+      effectiveScene.altitudeMode === 'orbital'          ? 0.15 :
+      effectiveScene.skyMode === 'storm'                 ? TINT.stormOpacity :
+      effectiveScene.lightMode === 'night' ||
+      effectiveScene.lightMode === 'deep-night'          ? TINT.nightOpacity :
+      TINT.defaultOpacity;
+    return isAllSkyLive ? base * 0.5 : base;
+  })();
 
   const updatedAt = lastUpdatedAt ? new Date(lastUpdatedAt) : new Date();
 

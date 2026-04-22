@@ -6,7 +6,7 @@ Goal: prove the product feel before AI anchors, voice, premium, or advanced imag
 Implementation note:
 This spec describes the target architecture and current Phase 1 requirements.
 For major implementation deviations, rejected approaches, and evaluated alternatives,
-read decisions.md before changing radar, satellite, map, HUD, or palette systems.
+read here-and-now-decisions.md before changing radar, satellite, map, HUD, or palette systems.
 
 ...
 
@@ -150,8 +150,8 @@ Do not attempt to install BC Barell or Address Sans Pro via npm — they are not
 
 Context files in project root:
 - CLAUDE.md       (project identity and core rules)
-- storyboards.md  (visual and emotional targets for each time slot)
-- tech-spec-v0.3.md (this file)
+- here-and-now-storyboards.md  (visual and emotional targets for each time slot)
+- here-and-now-tech-spec-v0.3.md (this file)
 
 ...
 
@@ -226,8 +226,8 @@ here-and-now/
       address-sans-pro.otf
 
   CLAUDE.md
-  storyboards.md
-  tech-spec-v0.3.md
+  here-and-now-storyboards.md
+  here-and-now-tech-spec-v0.3.md
   package.json
   tsconfig.json
   app.json

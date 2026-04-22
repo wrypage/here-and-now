@@ -40,7 +40,8 @@
         {
           "locationWhenInUsePermission": "HERE & NOW needs your location to show the live atmosphere above you."
         }
-      ]
+      ],
+      "expo-video"
     ]
   }
 }

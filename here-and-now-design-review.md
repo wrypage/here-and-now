@@ -2,7 +2,7 @@
 Version 1.1 — April 2026
 
 Use this file to judge builds.
-Use decisions.md to understand what was already tried and why certain approaches were rejected.
+Use here-and-now-decisions.md to understand what was already tried and why certain approaches were rejected.
 
 This document is used to review builds of HERE & NOW during design and development.
 

@@ -3,10 +3,10 @@ Version 1.1 — April 2026
 Last updated: 2026-04-20
 
 This file does not replace the tech spec or storyboards.
-- tech-spec-v0.3.md defines how the app should be built
-- storyboards.md defines how the app should feel on screen
-- design-review.md defines how builds should be judged
-- decisions.md (this file) records what was tried, accepted, rejected, and why
+- here-and-now-tech-spec-v0.3.md defines how the app should be built
+- here-and-now-storyboards.md defines how the app should feel on screen
+- here-and-now-design-review.md defines how builds should be judged
+- here-and-now-decisions.md (this file) records what was tried, accepted, rejected, and why
 
 Read this before making any changes to radar, satellite, map, HUD, palette, or
 visual layer systems. It exists so Claude Code does not repeat approaches that were
@@ -247,6 +247,11 @@ Rule: clear skies must always read as blue. Warmth only at the horizon. Not yet 
 **Claude Code:** claude --dangerously-skip-permissions
 ~/.claude/settings.json: { "permissions": { "allow": ["Bash(*)", "Write(*)", "Edit(*)", "MultiEdit(*)", "Read(*)"] } }
 
+### Claude permissions — skipDangerousModePermissionPrompt — CONFIRMED 2026-04-22
+
+~/.claude/settings.json already contains skipDangerousModePermissionPrompt: true.
+Just type "claude" to start. The --dangerously-skip-permissions flag is not needed.
+
 **Debugging:** Press j in Expo terminal → Chrome DevTools → Console tab.
 Look for [satellite], [HERE & NOW], and [VERIFY] prefixed messages.
 
@@ -272,3 +277,45 @@ HERE AND NOW+ tier. No ads at either tier ever.
 
 **Phase 6 — Ship**
 App Store submission. Public launch.
+
+...
+
+## 6. Session orientation
+
+Paste these URLs into Claude.ai at the start of any session to orient Claude
+without uploading files:
+
+https://raw.githubusercontent.com/wrypage/here-and-now/main/here-and-now-state-of-the-project.md
+https://raw.githubusercontent.com/wrypage/here-and-now/main/here-and-now-decisions.md
+
+## 7. Current known costs
+
+Last updated: 2026-04-22
+Ignorance of cost is a design flaw, not a detail to handle later.
+
+### Cost per run (Phase 1 — no AI yet)
+
+| Component | Service | Unit | Cost |
+|-----------|---------|------|------|
+| Weather data | Open-Meteo | free | $0 |
+| Radar tiles | RainViewer free tier | free | $0 |
+| Satellite tiles | NASA GIBS | free | $0 |
+| Star/planet data | visibleplanets.dev/v3 | free | $0 |
+| Storage/hosting | GitHub | free | $0 |
+
+**Phase 1 total running cost: $0**
+All data sources are free APIs with no authentication required.
+
+### Phase 2 cost drivers (when AI team moves in)
+
+| Component | Service | Estimated cost |
+|-----------|---------|---------------|
+| AI broadcast copy | Claude API (Sonnet) | per weather fetch — TBD |
+| Weather data | Tomorrow.io | paid tier — TBD |
+| App Store | Apple | $99/year developer account |
+
+### What we don't yet know
+
+- [ ] Tomorrow.io pricing at expected call volume
+- [ ] Claude API cost per broadcast copy generation (depends on prompt length + frequency)
+- [ ] Whether Phase 2 AI copy runs on every weather refresh or on demand

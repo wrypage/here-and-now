@@ -1,8 +1,8 @@
 # HERE & NOW — Storyboards
 Version 1.0 — April 2026
 
-For implementation constraints, see tech-spec-v0.3.md.
-For rejected visual approaches and reference-source decisions, see decisions.md.
+For implementation constraints, see here-and-now-tech-spec-v0.3.md.
+For rejected visual approaches and reference-source decisions, see here-and-now-decisions.md.
 
 These storyboards define the visual and emotional target for the Phase 1 prototype. They sit alongside the design doc and tech spec.
 

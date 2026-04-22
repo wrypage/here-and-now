@@ -5,10 +5,10 @@ Last updated: 2026-04-20
 This document explains what HERE & NOW is, where the project stands now, and what comes next.
 Read this first before diving into the tech spec, storyboards, design review, or decisions log.
 
-For implementation rules: tech-spec-v0.3.md
-For screen feeling targets: storyboards.md
-For judging builds: design-review.md
-For rejected approaches and project memory: decisions.md
+For implementation rules: here-and-now-tech-spec-v0.3.md
+For screen feeling targets: here-and-now-storyboards.md
+For judging builds: here-and-now-design-review.md
+For rejected approaches and project memory: here-and-now-decisions.md
 
 ...
 
@@ -93,7 +93,7 @@ The system includes cloud movement, precipitation, lightning, and a layered HUD.
 
 **What is not yet resolved:**
 - BC Barell font — may not be loading consistently. Wordmark sometimes falls back to
-  system font. PostScript name matching issue documented in decisions.md.
+  system font. PostScript name matching issue documented in here-and-now-decisions.md.
 - Palette for clear evening — dusk+clear was showing muddy amber-brown instead of blue.
   Needs correction per the "clear skies must always be blue" rule.
 - Orbital HUD opacity — currently set to 0.85 container-level; may need further tuning

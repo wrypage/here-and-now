@@ -51,7 +51,10 @@ export const LIGHTNING = {
 
 // ─── Satellite base layer ────────────────────────────────────────────────────
 //
-// Source priority:
+// source: 'auto'        — probe GeoColor then RainViewer (normal operation)
+//         'allsky_live' — live all-sky camera, single full-screen JPEG
+//
+// Source priority when 'auto':
 //   1. GOES-East ABI GeoColor via NASA GIBS — full color, auto day/night, ~10 min lag.
 //      Uses "default" in the date slot to serve the latest available tile —
 //      no capabilities XML fetch required (which 400s on mobile).
@@ -61,6 +64,21 @@ export const SATELLITE = {
   tileZoom: 6,
   regionDeg: 2.0,
   sourceProbeTtlMs: 15 * 60 * 1000,
+  source: 'allsky_live' as 'auto' | 'allsky_live',
+} as const;
+
+// ─── All-sky live camera ──────────────────────────────────────────────────────
+//
+// Single fisheye JPEG refreshed every 3 minutes.
+// cropX / cropY control how much of the frame edges are cropped to remove
+// tree silhouettes — tune via Tuning Mode without touching the component.
+
+export const ALLSKY = {
+  url: 'https://modul8or.com/allsky/image.jpg',
+  refreshIntervalMs: 3 * 60 * 1000,  // 3 minutes
+  cropX: 0.14,   // fraction of screen width to crop from each side
+  cropY: 0.175,  // fraction of screen height to crop from top and bottom
+  showRadar: false, // camera already shows real cloud movement — radar redundant
 } as const;
 
 // ─── Radar ────────────────────────────────────────────────────────────────────

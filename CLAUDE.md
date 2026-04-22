@@ -59,38 +59,55 @@ One gesture only: swipe up to reveal detail, swipe down to hide.
 All six files live in the project root. Read all of them before starting any build task.
 
 - CLAUDE.md (this file)       — project identity, font stack, core rules
-- state-of-the-project.md    — read this first. plain-English overview of what the
+- here-and-now-state-of-the-project.md    — read this first. plain-English overview of what the
                                 product is, where it stands, and what comes next
-- tech-spec-v0.3.md           — full architecture, types, worked examples, milestones
-- storyboards.md              — visual and emotional targets for each time-of-day slot
-- decisions.md                — what was tried, rejected, and why. read before changing
+- here-and-now-tech-spec-v0.3.md           — full architecture, types, worked examples, milestones
+- here-and-now-storyboards.md              — visual and emotional targets for each time-of-day slot
+- here-and-now-decisions.md                — what was tried, rejected, and why. read before changing
                                 radar, satellite, map, HUD, or palette systems
-- design-review.md            — checklist for evaluating builds (human review only)
+- here-and-now-design-review.md            — checklist for evaluating builds (human review only)
 
 The tech spec is the primary build reference.
 The storyboards define what correct visual output feels like.
-When in doubt about how something should look, consult storyboards.md.
+When in doubt about how something should look, consult here-and-now-storyboards.md.
+
+## Session closing trigger
+When the human says any of the following:
+  "done for tonight"
+  "wrapping up"
+  "closing session"
+  "end session"
+  "done for now"
+  "that's all for today"
+
+Treat it as the end-of-session trigger and immediately execute the full
+end-of-session protocol below before stopping. Do not wait to be asked.
 
 ## End of session protocol
-At the end of every session, before stopping, automatically do all of the following
-without being asked. This is not optional. It is part of every session.
+At the end of every session, execute all of the following automatically.
+This is not optional. It is part of every session.
 
-1. Update state-of-the-project.md
+1. Update here-and-now-state-of-the-project.md
+   - Update "Last updated: YYYY-MM-DD" at the top to today's date
    - Mark anything that was fixed this session
    - Note anything newly broken or discovered
    - Update the unresolved issues list to reflect current reality
    - Update the "Where the project is right now" section
 
-2. Update decisions.md
-   - Add any new decisions made this session under the correct section
-   - Add any approaches that were tried and rejected
-   - Add any bugs that were diagnosed, with root cause and fix status
+2. Update here-and-now-decisions.md
+   - Update "Last updated: YYYY-MM-DD" at the top to today's date
+   - Add any new decisions with today's date in the heading:
+     ### Decision name — YYYY-MM-DD
+   - Add any approaches tried and rejected, with today's date
+   - Add any bugs diagnosed, with root cause, fix status, and date
    - Update status of any previously open issues that were resolved
+   - Every new entry must have a date. No undated entries.
 
 3. Commit and push
    git add .
    git commit -m "session: [one-line summary of what changed]"
    git push
 
-Do this every session. The docs are the project memory.
+The docs are the project memory.
 If the docs are not updated, the next session starts blind.
+Entries without dates are not useful. Always date every entry.

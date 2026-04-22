@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, Image, StyleSheet, View } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Defs, G, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { SceneState } from '../types/scene';
-import { PRECIP, LIGHTNING, SKY, SATELLITE, ORBITAL } from '../utils/constants';
+import { PRECIP, LIGHTNING, SKY, SATELLITE, ORBITAL, ALLSKY } from '../utils/constants';
 import { STAR_CATALOG } from '../utils/starCatalog';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -22,6 +23,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 type SatState =
   | { source: 'geocolor'; zoom: number }
   | { source: 'rainviewer'; ts: number }
+  | { source: 'allsky_live' }
   | null;
 
 // Module-level — shared across mounts so probing only happens once per TTL
@@ -29,6 +31,9 @@ let satState: SatState = null;
 let satProbedAt = 0;
 
 async function probeSatState(lat: number, lon: number): Promise<SatState> {
+  // Short-circuit when source is manually forced
+  if (SATELLITE.source === 'allsky_live') return { source: 'allsky_live' };
+
   // 1. Try GeoColor at zoom levels 3–6 (lower first = faster response)
   for (const z of [3, 4, 5, 6]) {
     const { x, y } = latLonToTile(lat, lon, z);
@@ -77,6 +82,140 @@ function latLonToTile(lat: number, lon: number, z: number): { x: number; y: numb
   return { x, y };
 }
 
+// ─── All-sky live camera layer ────────────────────────────────────────────────
+//
+// On mount, probes for yesterday's timelapse video. If found, plays it for 9s
+// then crossfades to the live still image. If not found or fetch fails, shows
+// the live image immediately. The live image refreshes every ALLSKY.refreshIntervalMs.
+// Both layers share the same overflow:hidden crop so tree edges are hidden consistently.
+
+function getYesterdayDateStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
+type VideoLayerProps = {
+  uri: string;
+  cropW: number;
+  cropH: number;
+  offsetX: number;
+  offsetY: number;
+};
+
+// Separated component so useVideoPlayer hook is always called at the top level.
+function TimeLapseVideoLayer({ uri, cropW, cropH, offsetX, offsetY }: VideoLayerProps) {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      style={{ position: 'absolute', left: offsetX, top: offsetY, width: cropW, height: cropH }}
+      contentFit="cover"
+      nativeControls={false}
+      allowsFullscreen={false}
+    />
+  );
+}
+
+type AllSkyPhase = 'probing' | 'video' | 'live';
+
+const AllSkyLiveLayer = React.memo(function AllSkyLiveLayer() {
+  const [phase, setPhase] = useState<AllSkyPhase>('probing');
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const liveOpacity = useRef(new Animated.Value(0)).current;
+  const [imageKey, setImageKey] = useState(() => Date.now());
+
+  const cropW   = SCREEN_W * (1 + ALLSKY.cropX * 2);
+  const cropH   = SCREEN_H * (1 + ALLSKY.cropY * 2);
+  const offsetX = -(SCREEN_W * ALLSKY.cropX);
+  const offsetY = -(SCREEN_H * ALLSKY.cropY);
+
+  // On mount: probe for yesterday's timelapse video
+  useEffect(() => {
+    const dateStr = getYesterdayDateStr();
+    const url = `https://modul8or.com/allsky/videos/allsky-${dateStr}.mp4`;
+    console.log('[allsky] probing timelapse:', url);
+    fetch(url, { method: 'HEAD' })
+      .then((r) => {
+        if (r.ok) {
+          console.log('[allsky] timelapse found — playing video');
+          setVideoUri(url);
+          setPhase('video');
+        } else {
+          console.log('[allsky] timelapse not available (HTTP', r.status, ') — live image');
+          liveOpacity.setValue(1);
+          setPhase('live');
+        }
+      })
+      .catch((err) => {
+        console.log('[allsky] timelapse probe failed:', String(err), '— live image');
+        liveOpacity.setValue(1);
+        setPhase('live');
+      });
+  }, []);
+
+  // After 9s of video, crossfade to live image over 1.2s
+  useEffect(() => {
+    if (phase !== 'video') return;
+    const timer = setTimeout(() => {
+      console.log('[allsky] crossfading timelapse → live image');
+      Animated.timing(liveOpacity, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }).start(() => setPhase('live'));
+    }, 9000);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  // Live image refresh — starts once out of probing
+  useEffect(() => {
+    if (phase === 'probing') return;
+    const id = setInterval(() => {
+      const key = Date.now();
+      setImageKey(key);
+      console.log('[satellite] allsky refresh —', new Date(key).toLocaleTimeString());
+    }, ALLSKY.refreshIntervalMs);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  return (
+    <View
+      style={{ position: 'absolute', width: SCREEN_W, height: SCREEN_H, overflow: 'hidden' }}
+      pointerEvents="none"
+    >
+      {/* Timelapse video — only rendered during video/crossfade phases */}
+      {videoUri !== null && phase !== 'live' && (
+        <TimeLapseVideoLayer
+          uri={videoUri}
+          cropW={cropW}
+          cropH={cropH}
+          offsetX={offsetX}
+          offsetY={offsetY}
+        />
+      )}
+      {/* Live still image — fades in after video or immediately if no video */}
+      <Animated.View
+        style={[StyleSheet.absoluteFillObject, { opacity: liveOpacity }]}
+        pointerEvents="none"
+      >
+        <Image
+          source={{ uri: `${ALLSKY.url}?t=${imageKey}` }}
+          style={{ position: 'absolute', left: offsetX, top: offsetY, width: cropW, height: cropH }}
+          resizeMode="cover"
+        />
+      </Animated.View>
+    </View>
+  );
+});
+
 // ─── Satellite base layer ─────────────────────────────────────────────────────
 //
 // Wrapped in React.memo so radar frame advances (every 600ms) don't cause
@@ -116,6 +255,10 @@ const SatelliteLayer = React.memo(function SatelliteLayer({
   // One log per refresh cycle — fires when probe produces a new state
   useEffect(() => {
     if (!state) return;
+    if (state.source === 'allsky_live') {
+      console.log('[satellite] Source: allsky_live — single JPEG, refreshing every 3 min');
+      return;
+    }
     const z = state.source === 'geocolor' ? state.zoom : SATELLITE.tileZoom;
     const source = state.source === 'geocolor' ? 'GeoColor' : 'RainViewer';
     const ts = state.source === 'geocolor' ? 'default' : state.ts;
@@ -164,6 +307,10 @@ const SatelliteLayer = React.memo(function SatelliteLayer({
     }
     return result;
   }, [state, latitude, longitude]);
+
+  if (state?.source === 'allsky_live') {
+    return <AllSkyLiveLayer />;
+  }
 
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
