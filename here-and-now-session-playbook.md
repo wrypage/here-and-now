@@ -101,7 +101,9 @@ When you notice drift: stop, re-read decisions.md, decide to continue or close.
 3. Claude helps write decisions.md entries
 4. Update state-of-the-project.md — what changed, what was learned
 5. Define the next session goal
-6. Commit and push:
+6. Write session record to Supabase — ask Claude to insert via MCP:
+   projects: ['here-and-now'], summary, decisions, next_steps
+7. Commit and push:
 ```bash
 git add -A && git commit -m "session: [goal]" && git push
 ```
